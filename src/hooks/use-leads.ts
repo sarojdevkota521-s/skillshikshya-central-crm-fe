@@ -410,7 +410,7 @@ export function useAddCall(leadId?: number) {
     onSuccess: (data: ApiLeadCall & { remaining_seconds?: number; remaining_minutes?: number }) => {
       const remainingMsg =
         data?.remaining_seconds != null
-          ? `Remaining balance: ${formatDuration(data.remaining_seconds)}`
+          ? `Remaining balance: ${data.remaining_seconds === 0 ? "0 sec" : formatDuration(data.remaining_seconds)}`
           : undefined;
       toast.success("Call logged", { description: remainingMsg });
       void qc.invalidateQueries({ queryKey: ["lead"] });

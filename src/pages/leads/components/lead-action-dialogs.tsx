@@ -31,10 +31,10 @@ function parseDurationLivePreview(str: string): { seconds: number; preview: stri
   if (!str || !str.trim()) return { seconds: 0, preview: "" };
   const s = str.trim().toLowerCase();
 
-  // Colon format: H:M:S or M:S (e.g. 4:19, 7:89)
+  // Colon format: H:M:S or M:S (e.g. 4:19, 7:89, 1:02:30, 1:99:99)
   if (s.includes(":")) {
     const parts = s.split(":");
-    if (parts.length === 2 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1]))) {
+    if (parts.length === 2 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1])) {
       const mins = parseInt(parts[0], 10);
       const secs = parseInt(parts[1], 10);
       const total = mins * 60 + secs;
@@ -42,7 +42,7 @@ function parseDurationLivePreview(str: string): { seconds: number; preview: stri
       const remS = total % 60;
       return { seconds: total, preview: `= ${m} min ${String(remS).padStart(2, "0")} sec` };
     }
-    if (parts.length === 3 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1])) && !isNaN(Number(parts[2]))) {
+    if (parts.length === 3 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1]) && /^\d+$/.test(parts[2])) {
       const h = parseInt(parts[0], 10);
       const mins = parseInt(parts[1], 10);
       const secs = parseInt(parts[2], 10);
@@ -51,20 +51,21 @@ function parseDurationLivePreview(str: string): { seconds: number; preview: stri
       const remS = total % 60;
       return { seconds: total, preview: `= ${m} min ${String(remS).padStart(2, "0")} sec` };
     }
+    return { seconds: 0, preview: "", error: "Invalid duration format. Use MM:SS, e.g. 4:19" };
   }
 
   // Dot format: M.SS (e.g. 4.19, 7.89, 4.5)
-  if (s.includes(".") && !s.includes(":")) {
+  if (s.includes(".")) {
     const parts = s.split(".");
-    if (parts.length === 2 && !isNaN(Number(parts[0])) && !isNaN(Number(parts[1]))) {
+    if (parts.length === 2 && /^\d+$/.test(parts[0]) && /^\d+$/.test(parts[1])) {
       const mins = parseInt(parts[0], 10);
-      const secStr = parts[1].slice(0, 2).padStart(2, "0");
-      const secs = parseInt(secStr, 10);
+      const secs = parseInt(parts[1], 10);
       const total = mins * 60 + secs;
       const m = Math.floor(total / 60);
       const remS = total % 60;
       return { seconds: total, preview: `= ${m} min ${String(remS).padStart(2, "0")} sec` };
     }
+    return { seconds: 0, preview: "", error: "Invalid duration format. Use MM:SS, e.g. 4:19" };
   }
 
   // MmSs (e.g. 4m19s)
@@ -76,7 +77,7 @@ function parseDurationLivePreview(str: string): { seconds: number; preview: stri
     return { seconds: total, preview: `= ${m} min ${String(remS).padStart(2, "0")} sec` };
   }
 
-  // M only (e.g. 4m)
+  // M only (e.g. 4m, 4min, 4 mins)
   const mMatch = s.match(/^(\d+)\s*(?:m|min|mins|minute|minutes)$/);
   if (mMatch) {
     const total = parseInt(mMatch[1], 10) * 60;
@@ -84,7 +85,7 @@ function parseDurationLivePreview(str: string): { seconds: number; preview: stri
     return { seconds: total, preview: `= ${m} min 00 sec` };
   }
 
-  // S only (e.g. 45s)
+  // S only (e.g. 45s, 45sec)
   const sMatch = s.match(/^(\d+)\s*(?:s|sec|secs|second|seconds)$/);
   if (sMatch) {
     const total = parseInt(sMatch[1], 10);
